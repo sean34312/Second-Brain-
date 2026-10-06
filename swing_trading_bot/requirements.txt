@@ -1,0 +1,14 @@
+# Core
+robin_stocks>=3.4.0      # unofficial Robinhood API client (OAuth2 login, orders, quotes)
+pyotp>=2.9.0             # generates Robinhood MFA (TOTP) codes from ROBINHOOD_MFA_SECRET
+pandas>=2.0
+numpy>=1.24
+PyYAML>=6.0
+python-dotenv>=1.0       # loads .env into environment variables
+requests>=2.31           # webhook alerts (also a robin_stocks dependency)
+
+# Free historical data for backtesting / paper trading without a Robinhood login
+yfinance>=0.2.40
+
+# Tests
+pytest>=7.0

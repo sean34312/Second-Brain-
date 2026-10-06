@@ -1,0 +1,74 @@
+# =============================================================================
+# Swing trading bot configuration
+# Secrets (Robinhood login, webhook) go in environment variables / .env - NOT here.
+# Every key is optional; omitted keys use the defaults shown.
+# =============================================================================
+
+bot:
+  mode: paper                 # "paper" (simulated orders) or "live" (real money!)
+  watchlist: [AAPL, MSFT, NVDA, AMZN, GOOGL, META, JPM, COST]
+  poll_interval_seconds: 300  # how often the loop runs (5 min); daily-bar strategy, no need to go faster
+  trade_only_market_hours: true
+  data_source: auto           # auto = Robinhood if credentials are set, else yfinance
+                              # also: robinhood | yfinance | csv | synthetic
+  csv_data_dir: data          # for data_source: csv -> data/<SYMBOL>.csv
+  history_days: 365           # calendar days of daily candles loaded for indicators
+  paper_starting_cash: 25000
+  paper_slippage_pct: 0.05    # simulated slippage per paper fill
+  log_dir: logs
+  trade_log_file: logs/trades.csv
+  state_file: state/bot_state.json
+  paper_account_file: state/paper_account.json
+  max_consecutive_api_failures: 3   # then raise a CRITICAL alert and re-authenticate
+  logout_on_shutdown: false   # true = revoke the cached token (next start needs MFA again)
+  flatten_on_shutdown: false  # true = sell all bot positions when the bot stops
+
+strategy:
+  # --- RSI: buy pullbacks that touched "oversold" and are turning back up
+  rsi_period: 14
+  rsi_oversold: 40            # in an uptrend RSI rarely reaches 30; 40 = "oversold within a trend"
+  rsi_overbought: 70
+  rsi_lookback: 10            # RSI must have been <= rsi_oversold within this many bars
+  # --- MACD: momentum confirmation
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  macd_cross_lookback: 5      # bullish MACD/signal cross must be this recent
+  # --- Moving averages: directional bias
+  sma_fast: 20
+  sma_slow: 50
+  require_price_above_slow_sma: true
+  # --- Exits (stop-loss is under `risk`)
+  exit_on_rsi_overbought: true
+  exit_on_macd_bearish_cross: true
+  exit_on_trend_break: true   # close below SMA(slow)
+  take_profit_pct: 6.0        # 0 = disabled
+  max_holding_days: 20        # trading days; 0 = disabled
+
+risk:
+  risk_per_trade_pct: 1.0     # max % of equity lost if the stop is hit
+  stop_loss_pct: 2.5          # stop distance below the entry fill
+  max_positions: 3            # concurrent positions opened by the bot
+  daily_max_loss_pct: 3.0     # halt new entries for the day once equity is down this much
+  flatten_on_daily_loss: false
+  max_position_pct: 25.0      # cap any single position at this % of equity
+  allow_fractional: false     # fractional shares require market entry orders
+  reentry_cooldown_days: 1    # wait before re-buying a symbol after an exit
+
+orders:
+  entry_order_type: limit     # market | limit
+  exit_order_type: market     # market | limit (market recommended so exits always fill)
+  limit_offset_pct: 0.2       # buy limit = quote +0.2%, sell limit = quote -0.2%
+  order_timeout_seconds: 120  # cancel unfilled orders after this
+  time_in_force: gfd          # gfd | gtc
+  use_broker_stop_orders: true  # rest a GTC stop at Robinhood so you're protected if the bot dies
+  max_entry_gap_pct: 2.0      # skip an entry if price ran this far above the signal close
+
+backtest:
+  start: "2021-01-01"
+  end: ""                     # empty = today
+  initial_capital: 25000
+  slippage_pct: 0.05
+  commission_per_trade: 0.0
+  data_source: yfinance       # yfinance | csv | synthetic | robinhood
+  output_dir: backtest_results
